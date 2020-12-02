@@ -2,6 +2,8 @@ package ecommerce;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
+
+import Classes.Carrinho;
 import Classes.NotaFiscal;
 import Classes.Produto;
 public class FinalEcommerce {
@@ -9,7 +11,7 @@ public class FinalEcommerce {
 	public static void main(String[] args) {
 		Scanner leia = new Scanner(System.in);
 		NotaFiscal nota = new NotaFiscal();
-		int escolhaProduto,quantidade;
+		int escolhaProduto,quantidade, contador=0, contCarrinho=0;
 		char continuar;
 		double parcela = 0;
 		double valorTotal = 0;
@@ -18,7 +20,7 @@ public class FinalEcommerce {
 		
 		Produto alterarProduto = new Produto();
 		
-		List <String> carrinho = new ArrayList<>();
+		List <Carrinho> carrinho = new ArrayList<>();
 		List <Produto> produto = new ArrayList<>();
 		
 		System.out.println("                          _      \r\n"
@@ -71,10 +73,13 @@ public class FinalEcommerce {
 			if(escolhaProduto<0 || escolhaProduto>9) {
 				System.err.println("ERROR! CODIGO DE PRODUTO INEXISTENTE!");
 			}
-			}while(escolhaProduto<0 || escolhaProduto>9);
-			System.out.println("PRODUTO           MEDIDA     VALOR    ESTOQUE");
-			System.out.println("---------------------------------------------");
-			System.out.println(produto.get(escolhaProduto).getNome()+"   "
+			else if(produto.get(escolhaProduto).getEstoque() == 0) {
+				System.err.println("ERROR! PRODUTO SEM ESTOQUE!");
+			}
+			}while(escolhaProduto<0 || escolhaProduto>9 || produto.get(escolhaProduto).getEstoque() == 0);
+			System.out.println("CODIGO      PRODUTO          MEDIDA     VALOR    ESTOQUE");
+			System.out.println("--------------------------------------------------------");
+			System.out.println("  "+produto.get(escolhaProduto).getCodigo()+"        "+produto.get(escolhaProduto).getNome()+"   "
 						+produto.get(escolhaProduto).getMedida()+"   "+produto.get(escolhaProduto).getValorUnitario()+
 							"       "+produto.get(escolhaProduto).getEstoque());
 			do {			
@@ -85,26 +90,59 @@ public class FinalEcommerce {
 			}
 			}while(quantidade<0 || quantidade>produto.get(escolhaProduto).getEstoque());
 			
-			carrinho.add(new String(produto.get(escolhaProduto).getNome()+"   "+produto.get(escolhaProduto)
-					.getMedida()+"   "+produto.get(escolhaProduto).getValorUnitario()+"        "+quantidade+"        "+(quantidade*produto.get(escolhaProduto).getValorUnitario())));
-			
+			//controle do carrinho
+			if(contador==0)
+			{
+			carrinho.add(new Carrinho(produto.get(escolhaProduto).getCodigo(), produto.get(escolhaProduto).getNome(), produto.get(escolhaProduto)
+					.getMedida(), produto.get(escolhaProduto).getValorUnitario(), quantidade, (quantidade*produto.get(escolhaProduto).getValorUnitario())));
+			contCarrinho=1;
+			}
+			else
+			{
+			int tamanho=carrinho.size();
+			int contLaco=0;
+			for (int x=0;x<tamanho;x++)
+			{
+				if ((carrinho.get(x).getCodigo()) == (produto.get(escolhaProduto).getCodigo()))
+				{
+					//System.out.println("ENTROU");
+					carrinho.get(x).setNoCarrinho(quantidade+(carrinho.get(x).getNoCarrinho()));
+					carrinho.get(x).setValorSub((carrinho.get(x).getValorSub())+(quantidade*produto.get(escolhaProduto).getValorUnitario()));
+					contLaco++;
+				}
+				
+			}
+			if(contLaco==0)
+			{
+				carrinho.add(new Carrinho(produto.get(escolhaProduto).getCodigo(), produto.get(escolhaProduto).getNome(), produto.get(escolhaProduto)
+						.getMedida(), produto.get(escolhaProduto).getValorUnitario(), quantidade, (quantidade*produto.get(escolhaProduto).getValorUnitario())));
+				contCarrinho=contCarrinho+1;
+				//break;
+			}
+			}
+			contador++;
+						
 			valorTotal=valorTotal+(quantidade*produto.get(escolhaProduto).getValorUnitario());
 			
 			
-			System.out.println("-----------------------SEU CARRINHO-------------------------");
-			System.out.println("------------------------------------------------------------");
-			System.out.println("PRODUTO           MEDIDA     VALOR    COMPRADO   SUB-V.TOTAL");
-			System.out.println("------------------------------------------------------------");
+			System.out.println("------------------------------SEU CARRINHO------------------------------");
+			System.out.println("------------------------------------------------------------------------");
+			System.out.println("CODIGO      PRODUTO           MEDIDA     VALOR    COMPRADO   SUB-V.TOTAL");
+			System.out.print("------------------------------------------------------------------------");
+		
 			int tamanho=carrinho.size();
+			//System.out.println(tamanho);
 			for (int x=0;x<tamanho;x++)
 			{
-			System.out.println(carrinho.get(x));
+			System.out.printf("\n  "+carrinho.get(x).getCodigo()+"        "+carrinho.get(x).getNome()+"   "	
+			+carrinho.get(x).getMedida()+"   "+carrinho.get(x).getValorUnitario()+"       "
+						+carrinho.get(x).getNoCarrinho()+"         %.2f",carrinho.get(x).getValorSub());
 			}
-			//System.out.print("------------------------------------------------------------");
-			System.out.print("____________________________________________________________");
-			System.out.print("\n************************************************************");
+					
+			System.out.print("\n________________________________________________________________________");
+			System.out.print("\n************************************************************************");
 			System.out.printf("\nValor total da compra: R$ %.2f",valorTotal );
-			System.out.print("\n____________________________________________________________");
+			System.out.print("\n________________________________________________________________________");
 			produto.get(escolhaProduto).diminuirEstoque(quantidade);
 			
 			System.out.println("\nDeseja adicionar outro produto? [S/N] ");
@@ -126,27 +164,29 @@ public class FinalEcommerce {
 		System.out.print("\nDIGITE [4] PARA PARCELAR EM 3X COM ACRESCIMO DE 10 % DE JUROS\n ");	
 		int resposta=leia.nextInt();
 
-		System.out.println("###################### - NOTA FISCAL - #####################");
+		System.out.println("############################# - NOTA FISCAL - ###########################");
+		System.out.println("-------------------------------------------------------------------------");
 		System.out.println("LOJA: "+nomeLoja);
 		System.out.println("CNPJ 68.554.545/5469-80");
-		System.out.println("------------------------------------------------------------");
+		System.out.println("-------------------------------------------------------------------------");
 		System.out.println("CLIENTE: "+ nomeCliente);
 		System.out.println("CPF: "+cpf);
-		System.out.println("------------------------------------------------------------");
-		System.out.println("PRODUTO           MEDIDA     VALOR    COMPRADO   SUB-V.TOTAL");
-		System.out.println("------------------------------------------------------------");
+		System.out.println("-------------------------------------------------------------------------");
+		System.out.println("CODIGO      PRODUTO           MEDIDA     VALOR    COMPRADO   SUB-V.TOTAL");
+		System.out.print("-------------------------------------------------------------------------");
 		int tamanho=carrinho.size();
 		for (int x=0;x<tamanho;x++)
 		{
-		System.out.println(carrinho.get(x));
+		System.out.printf("\n  "+carrinho.get(x).getCodigo()+"        "+carrinho.get(x).getNome()+"   "+carrinho.get(x).getMedida()+"   "+carrinho.get(x).getValorUnitario()+"       "+carrinho.get(x).getNoCarrinho()+"         %.2f",carrinho.get(x).getValorSub());
 		}
-		System.out.println("------------------------------------------------------------");
+		System.out.print("\n-------------------------------------------------------------------------\n");
 		nota.formaPagamento(valorTotal, resposta);
-		System.out.print("\n____________________________________________________________");
+		System.out.print("\n_________________________________________________________________________");
 		System.out.println("\nPróximo cliente? ");
 		proximoCliente = leia.next().toUpperCase().charAt(0);
 		carrinho.clear ();
 		valorTotal=0;
+		contador=0;
 	}
 		while(proximoCliente == 'S');
 		System.out.println("FIM DO PROGRAMA!");
